@@ -23,6 +23,7 @@ Localization.print_language_settings()
 
 import argparse
 import signal
+import time
 from ikalog.engine import *
 from IkaConfig import *
 from ikalog.utils import *
@@ -36,6 +37,9 @@ def signal_handler(num, frame):
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--input', '-i', dest='input', type=str,
+                        choices=['DirectShow', 'CVCapture', 'ScreenCapture',
+                                 'AVFoundationCapture', 'CVFile'])
     parser.add_argument('--input_file', '-f', dest='input_file', type=str)
     parser.add_argument('--output_description', '--desc',
                         dest='output_description', type=str)
@@ -43,6 +47,8 @@ def get_args():
                         default=False)
     parser.add_argument('--time', '-t', dest='time', type=str)
     parser.add_argument('--time_msec', dest='time_msec', type=int)
+    parser.add_argument('--epoch_time', dest='epoch_time', type=str,
+                        help='In the format like 20150528_235900 or "now".')
     parser.add_argument('--video_id', dest='video_id', type=str)
 
     return vars(parser.parse_args())
@@ -50,6 +56,19 @@ def get_args():
 def time_to_msec(time):
     minute, sec = time.split(':')
     return (int(minute) * 60 + int(sec)) * 1000
+
+def get_epoch_time(args, capture):
+    """Returns the epoch time in sec or None."""
+    epoch_time_arg = args.get('epoch_time')
+    if epoch_time_arg == 'now':
+        return None
+
+    if not epoch_time_arg:
+        if isinstance(capture, inputs.CVFile):
+            return capture.get_start_time()
+        return None
+
+    return time.mktime(time.strptime(epoch_time_arg, "%Y%m%d_%H%M%S"))
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
@@ -65,6 +84,11 @@ if __name__ == "__main__":
     engine = IkaEngine(enable_profile=args.get('profile'))
     engine.pause(False)
     engine.set_capture(capture)
+
+    epoch_time = get_epoch_time(args, capture)
+    if epoch_time:
+        engine.set_epoch_time(epoch_time)
+
     engine.set_plugins(OutputPlugins)
     engine.close_session_at_eof = True
     engine.run()
