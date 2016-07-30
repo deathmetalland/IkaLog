@@ -18,7 +18,6 @@
 #  limitations under the License.
 #
 
-from datetime import datetime
 import os
 import time
 
@@ -54,12 +53,16 @@ class CSV(object):
         else:
             self.editCsvFilename.SetValue('')
 
-    def on_config_reset(self, context=None):
+    def on_config_reset(self, context):
+        self.config_reset()
+        self.refresh_ui()
+
+    def config_reset(self):
         self.enabled = False
         self.csv_filename = os.path.join(os.getcwd(), 'ika.csv')
 
     def on_config_load_from_context(self, context):
-        self.on_config_reset(context)
+        self.config_reset()
         try:
             conf = context['config']['csv']
         except:
@@ -85,7 +88,7 @@ class CSV(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY)
-        self.page = notebook.InsertPage(0, self.panel, _('CSV'))
+        self.panel_name = _('CSV')
         self.layout = wx.BoxSizer(wx.VERTICAL)
         self.panel.SetSizer(self.layout)
         self.checkEnable = wx.CheckBox(
@@ -121,9 +124,9 @@ class CSV(object):
         won = IkaUtils.getWinLoseText(
             context['game']['won'], win_text="勝ち", lose_text="負け", unknown_text="不明")
 
-        t = datetime.now()
-        t_str = t.strftime("%Y,%m,%d,%H,%M")
+        t = IkaUtils.get_end_time(context)
         t_unix = int(time.mktime(t.timetuple()))
+        t_str = t.strftime("%Y,%m,%d,%H,%M")
         s_won = IkaUtils.getWinLoseText(
             won, win_text="勝ち", lose_text="負け", unknown_text="不明")
 

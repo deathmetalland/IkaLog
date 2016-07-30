@@ -1,0 +1,407 @@
+<html>
+<head>
+<style>
+#source {
+  width: 30em;
+}
+#graph {
+  width: 960;
+  height: 540;
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+}
+.hidden {
+  display: none;
+}
+</style>
+</head>
+<body>
+File: <input id="source" type="text" value="/Users/komatsu/github/IkaLog_dev/test_data/normal.ts" />
+<input id="go" type="button" value="Go" />
+
+<iframe src="api/v1/engine/preview" width="1280" height="720"></iframe>
+<canvas id="graph" width="800" height="440"></canvas>
+<canvas id="meter" class="hidden" width="720" height="402"></canvas>
+<script>
+
+function sendSource() {
+  var source = document.getElementById("source");
+  var request = '{"file_path": "' + source.value + '"}';
+
+  var url = "/api/v1/engine/source";
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", url, true);
+  xhr.addEventListener("load", function(ev) {
+    if (xhr.readyState == 4 && xhr.status == 200) {
+      console.log(xhr.responseText);
+    }
+  });
+  xhr.addEventListener("error", function(ev) {
+    // Do something.
+  });
+  xhr.send(request);
+}
+
+var go_button = document.getElementById("go");
+go_button.addEventListener("click", sendSource);
+
+function drawText(context, string, x, y) {
+  var prev_line_width = context.lineWidth;
+  var prev_stroke_style = context.strokeStyle;
+
+  context.lineWidth = 2;
+  context.strokeStyle = 'white';
+  context.strokeText(string, x, y);
+  context.strokeStyle = 'black';
+  context.fillText(string, x, y);
+  context.lineWidth = prev_line_width;
+  context.strokeStyle = prev_stroke_style;
+}
+
+function draw(data) {
+  if (data == undefined) {
+    return;
+  }
+  var events = data.events;
+  if (events == undefined) {
+    return;
+  }
+
+  if (data.offset_msec == undefined) {
+    return;
+  }
+  var current_sec = parseInt(data.offset_msec / 1000);
+
+  var canvas_meter = document.getElementById('meter');
+  if (canvas_meter == undefined) {
+    return;
+  }
+  var context_meter = canvas_meter.getContext('2d');
+
+  draw_meter(context_meter, data);
+
+  var canvas_graph = document.getElementById('graph');
+  if (canvas_graph == undefined) {
+    return;
+  }
+  var context_graph = canvas_graph.getContext('2d');
+
+  var margin_left = 30;
+  var margin_right = 10;
+  var margin_top = 20;
+  var margin_bottom = 20;
+  var width = canvas_graph.width - (margin_left + margin_right);
+  var height = canvas_graph.height - (margin_top + margin_bottom);
+
+  context_graph.clearRect(0, 0, canvas_graph.width, canvas_graph.height);
+  context_graph.stroke();
+
+  var prev_text_align = context_graph.textAlign;
+  var prev_text_baseline = context_graph.textBaseline;
+  context_graph.textAlign = 'left';
+  context_graph.textBaseline = 'top';
+  var bottom = height + margin_top + 2;
+
+  drawText(context_graph, '0:00', margin_left, bottom);
+  drawText(context_graph, '1:00', margin_left + width / 6, bottom);
+  drawText(context_graph, '2:00', margin_left + width / 6 * 2, bottom);
+  drawText(context_graph, '3:00', margin_left + width / 6 * 3, bottom);
+  drawText(context_graph, '4:00', margin_left + width / 6 * 4, bottom);
+  drawText(context_graph, '5:00', margin_left + width / 6 * 5, bottom);
+
+  context_graph.textAlign = 'right';
+  context_graph.textBaseline = 'middle';
+  var left = margin_left - 2;
+  var rule = data.rule;
+  if (rule == 'yagura' || rule == 'hoko') {
+    drawText(context_graph, '100', left, margin_top)
+    drawText(context_graph, '50',  left, margin_top + height / 4);
+    drawText(context_graph, '0',   left, margin_top + height / 4 * 2);
+    drawText(context_graph, '50',  left, margin_top + height / 4 * 3);
+    drawText(context_graph, '100', left, margin_top + height / 4 * 4);
+  } else if (rule == 'area') {
+    drawText(context_graph, '100', left, margin_top)
+    drawText(context_graph, '75',  left, margin_top + height / 4);
+    drawText(context_graph, '50',  left, margin_top + height / 4 * 2);
+    drawText(context_graph, '25',  left, margin_top + height / 4 * 3);
+    drawText(context_graph, '0',   left, margin_top + height / 4 * 4);
+  }
+  context_graph.textAlign = prev_text_align;
+  context_graph.textBaseline = prev_text_baseline;
+
+  context_graph.drawImage(canvas_meter,
+    0, 0, canvas_meter.width, canvas_meter.height,
+    margin_left, margin_top, width, height);
+}
+
+function get_color(color, alpha, fallback) {
+  if (color == undefined || color.rgb == undefined) {
+    return fallback;
+  }
+  var rgb = color.rgb;
+  var color = 'rgba(' + rgb.join(', ') + ', ' + alpha + ')';
+  return color;
+}
+
+function get_colors(data) {
+  var colors = {}
+  // Deep Orange 200 of https://material.google.com/style/color.html
+  fb_my_team_inklings = 'rgba(128, 203, 196, 0.5)';
+  fb_my_team_splatzone = 'rgba(128, 203, 196, 1.0)';
+
+  // Deep Orange 200 of https://material.google.com/style/color.html
+  fb_counter_team_inklings = 'rgba(255, 171, 145, 0.5)';
+  fb_counter_team_splatzone = 'rgba(255, 171, 145, 1.0)';
+
+  if (data.my_team_color == undefined) {
+    colors['my_team_inklings'] = fb_my_team_inklings;
+    colors['my_team_splatzone'] = fb_my_team_splatzone;
+  } else {
+    colors['my_team_inklings'] = get_color(
+      data.my_team_color, '0.5', fb_my_team_inklings);
+    colors['my_team_splatzone'] = get_color(
+      data.my_team_color, '1.0', fb_my_team_splatzone);
+  }
+  if (data.counter_team_color == undefined) {
+    // Deep Orange 200 of https://material.google.com/style/color.html
+    colors['counter_team_inklings'] = fb_counter_team_inklings;
+    colors['counter_team_splatzone'] = fb_counter_team_splatzone;
+  } else {
+    colors['counter_team_inklings'] = get_color(
+      data.counter_team_color, '0.5', fb_counter_team_inklings);
+    colors['counter_team_splatzone'] = get_color(
+      data.counter_team_color, '1.0', fb_counter_team_splatzone);
+  }
+  return colors;
+}
+
+function draw_meter(context, data) {
+  var events = data.events;
+  var current_sec = parseInt(data.offset_msec / 1000);
+  var width = context.canvas.width;
+  var height = context.canvas.height;
+  var x_scale = width / 360;
+  var y_scale = height / 201;
+  var mid_height = parseInt(height / 2) + (1 * y_scale);
+
+  context.clearRect(0, 0, width, height);
+
+  // Border
+  context.rect(0, 0, width, height);
+  context.stroke();
+
+  // Grid
+  context.strokeStyle = "#CCC";
+  context.lineWidth = 0.5;
+  for (var xi = 1; xi < 6; xi++) {
+    context.beginPath();
+    context.moveTo(width / 6 * xi, 0);
+    context.lineTo(width / 6 * xi, height);
+    context.stroke();
+  }
+  for (var yi = 1; yi < 4; yi++) {
+    context.beginPath();
+    context.moveTo(0,     height / 4 * yi);
+    context.lineTo(width, height / 4 * yi);
+    context.stroke();
+  }
+
+  // Time indicator
+  context.strokeStyle = "#666";
+  context.lineWidth = 1;
+
+  context.beginPath();
+  context.moveTo(current_sec * x_scale, 0);
+  context.lineTo(current_sec * y_scale, height);
+  context.stroke();
+
+  var colors = get_colors(data);
+
+  // Inklings alive states
+  inklings_strokes = get_stroke_inklings(events.inklings, current_sec);
+  var stroke_style = colors['my_team_inklings'];
+  for (var i = 0; i < inklings_strokes.length; i++) {
+    if (i == 4) {
+      stroke_style = colors['counter_team_inklings'];
+    }
+    var stroke = inklings_strokes[i];
+    for (var j = 0; j < stroke.length; j++) {
+      if (stroke[j][0] == stroke[j][1]) {
+        continue;
+      }
+      var y = 10 * i + 120;
+      context.lineWidth = 12;
+      context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      context.beginPath();
+      context.moveTo(stroke[j][0] * x_scale, y * y_scale);
+      context.lineTo(stroke[j][1] * x_scale, y * y_scale);
+      context.stroke();
+
+      context.lineWidth = 10;
+      context.strokeStyle = stroke_style;
+      context.beginPath();
+      context.moveTo(stroke[j][0] * x_scale, y * y_scale);
+      context.lineTo(stroke[j][1] * x_scale, y * y_scale);
+      context.stroke();
+    }
+  }
+
+  // Objectives
+  context.lineWidth = 5;
+
+  var rule = data.rule;
+  if (rule == 'yagura' || rule == 'hoko') {
+    var stroke = get_stroke_objective(events.objective, current_sec);
+    if (stroke.length > 0) {
+      context.lineWidth = 7;
+      context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      context.beginPath();
+      context.moveTo(0, mid_height);
+      for (var i = 0; i < stroke.length; i++) {
+        context.lineTo(stroke[i][0] * x_scale,
+                       mid_height - stroke[i][1] * y_scale);
+      }
+      context.stroke();
+
+      context.lineWidth = 5;
+      context.strokeStyle = "#455A64";
+      context.beginPath();
+      context.moveTo(0, mid_height);
+      for (var i = 0; i < stroke.length; i++) {
+        context.lineTo(stroke[i][0] * x_scale,
+                       mid_height - stroke[i][1] * y_scale);
+      }
+      context.stroke();
+    }
+  } else if (rule == 'area') {
+    var stroke = get_stroke_splatzone(events.splatzone, current_sec);
+    for (var i = 1; i <= 2; i++) {
+      var color_key = (i == 1) ? "my_team_splatzone" : "counter_team_splatzone";
+      if (stroke.length > 0) {
+        context.lineWidth = 7;
+        context.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+        context.beginPath();
+        context.moveTo(0, height);
+        for (var j = 0; j < stroke.length; j++) {
+          context.lineTo(stroke[j][0] * x_scale,
+                         stroke[j][i] * 2 * y_scale);
+        }
+        context.stroke();
+
+        context.lineWidth = 5;
+        context.strokeStyle = colors[color_key];
+        context.beginPath();
+        context.moveTo(0, height);
+        for (var j = 0; j < stroke.length; j++) {
+          context.lineTo(stroke[j][0] * x_scale,
+                         stroke[j][i] * 2 * y_scale);
+        }
+        context.stroke();
+      }
+    }
+  }
+
+  context.lineWidth = 1;
+  context.strokeStyle = "#000";
+}
+
+function get_stroke_objective(events, current_sec) {
+  var stroke = [];
+  if (events == undefined) {
+    return stroke;
+  }
+  var last_sec = 0;
+  var position = 0;
+  for (var i = 0; i < events.length; i++) {
+    var time = events[i][0];
+    position = events[i][1];
+    if (time > (last_sec * 1000)) {
+      last_sec++;
+      stroke.push([last_sec, position])
+    }
+  }
+  if (last_sec != current_sec) {
+    stroke.push([current_sec, position])
+  }
+  return stroke;
+}
+
+function get_stroke_splatzone(events, current_sec) {
+  var stroke = [];
+  if (events == undefined) {
+    return stroke;
+  }
+  var last_sec = 0;
+  var zone1 = 100;
+  var zone2 = 100;
+  for (var i = 0; i < events.length; i++) {
+    var time = events[i][0];
+    zone1 = events[i][1][0];
+    zone2 = events[i][1][1];
+    if (time > (last_sec * 1000)) {
+      last_sec++;
+      stroke.push([last_sec, zone1, zone2])
+    }
+  }
+  if (last_sec != current_sec) {
+    stroke.push([current_sec, zone1, zone2])
+  }
+  return stroke;
+}
+
+function get_stroke_inklings(events, current_sec) {
+  strokes = [[[0,0]], [[0,0]], [[0,0]], [[0,0]],
+             [[0,0]], [[0,0]], [[0,0]], [[0,0]]];
+  if (events == undefined) {
+    return strokes;
+  }
+
+  time_sec = 0;
+  prev_inklings = [true, true, true, true, true, true, true, true];
+
+  for (var i = 0; i < events.length; i++) {
+    var time = events[i][0];
+    time_sec = parseInt(time / 1000);
+    var inklings = events[i][1][0].concat(events[i][1][1]);
+    for (var j = 0; j < inklings.length; j++) {
+      var stroke = strokes[j];
+      if (prev_inklings[j]) {
+        stroke[stroke.length - 1][1] = time_sec;
+      } else if (inklings[j]) {
+        stroke.push([time_sec, time_sec]);
+      }
+    }
+    prev_inklings = inklings;
+  }
+
+  for (var j = 0; j < inklings.length; j++) {
+    if (prev_inklings[j]) {
+      var stroke = strokes[j];
+      stroke[stroke.length - 1][1] = current_sec;
+    }
+  }
+
+  return strokes;
+}
+
+function get_context() {
+  var url = "/api/v1/engine/context/game";
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.addEventListener("load", function(ev) {
+    if (xhr.readyState == 4 && xhr.status == 200) {
+      var context = JSON.parse(xhr.responseText);
+      draw(context);
+    }
+  });
+  xhr.addEventListener("error", function(ev) {
+    // Do something.
+  });
+  xhr.send();
+}
+
+var interval = setInterval(get_context, 1000);
+</script>
+</body>
+</html>

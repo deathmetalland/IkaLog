@@ -55,12 +55,16 @@ class Screenshot(object):
             self.editDir.SetValue('')
 
     def on_config_reset(self, context=None):
+        self.config_reset()
+        self.refresh_ui()
+
+    def config_reset(self):
         self.result_detail_enabled = False
         self.miiverse_drawing_enabled = False
         self.dir = os.path.join(os.getcwd(), 'screenshots')
 
     def on_config_load_from_context(self, context):
-        self.on_config_reset(context)
+        self.config_reset()
         try:
             conf = context['config']['screenshot']
         except:
@@ -90,7 +94,7 @@ class Screenshot(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY)
-        self.page = notebook.InsertPage(0, self.panel, _('Screenshot'))
+        self.panel_name = _('Screenshot')
         self.layout = wx.BoxSizer(wx.VERTICAL)
         self.panel.SetSizer(self.layout)
         self.checkResultDetailEnable = wx.CheckBox(

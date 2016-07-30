@@ -32,6 +32,7 @@ Localization.print_language_settings()
 
 # from ikalog.engine import *
 from ikalog import outputs
+from ikalog.engine import *
 from ikalog.ui.panel import *
 from ikalog.ui import VideoCapture, IkaLogGUI
 
@@ -43,13 +44,29 @@ def IkaUI_main():
 
     application = wx.App()
     input_plugin = VideoCapture()
-    gui = IkaLogGUI()
-    input_plugin.on_option_tab_create(gui.options.notebookOptions)
-    gui.frame.Show()
 
-    engine = gui.create_engine()
+    engine = IkaEngine(keep_alive=True)
     engine.close_session_at_eof = True
     engine.set_capture(input_plugin)
+
+    # 設定画面を持つ各種 Output Plugin
+    # -> 設定画面の生成とプラグインリストへの登録
+    outputs_with_gui = [
+        outputs.CSV(),
+        # outputs.Fluentd(),
+        outputs.JSON(),
+        # outputs.Hue(),
+        outputs.OBS(),
+        outputs.Twitter(),
+        outputs.Screenshot(),
+        outputs.Boyomi(),
+        outputs.Slack(),
+        outputs.StatInk(),
+        outputs.DebugVideoWriter(),
+        outputs.WebSocketServer(),
+    ]
+    gui = IkaLogGUI(engine, outputs_with_gui)
+
     plugins = []
 
     # とりあえずデバッグ用にコンソールプラグイン
@@ -58,7 +75,6 @@ def IkaUI_main():
     # 各パネルをプラグインしてイベントを受信する
     plugins.append(gui.preview)
     plugins.append(gui.last_result)
-    plugins.append(gui.timeline)
 
     # 設定画面を持つ input plugin もイベントを受信する
     plugins.append(input_plugin)
@@ -66,25 +82,7 @@ def IkaUI_main():
     # UI 自体もイベントを受信
     plugins.append(gui)
 
-    # 設定画面を持つ各種 Output Plugin
-    # -> 設定画面の生成とプラグインリストへの登録
-    for plugin in [
-            outputs.CSV(),
-            # outputs.Fluentd(),
-            outputs.JSON(),
-            # outputs.Hue(),
-            outputs.OBS(),
-            outputs.Twitter(),
-            outputs.Screenshot(),
-            outputs.Boyomi(),
-            outputs.Slack(),
-            outputs.StatInk(),
-            outputs.DebugVideoWriter(),
-            outputs.WebSocketServer(),
-    ]:
-        print('Initializing %s' % plugin)
-        plugin.on_option_tab_create(gui.options.notebookOptions)
-        plugins.append(plugin)
+    plugins.extend(outputs_with_gui)
 
     # 本当に困ったときのデバッグログ増加モード
     if 'IKALOG_DEBUG' in os.environ:
@@ -93,15 +91,7 @@ def IkaUI_main():
     # プラグインリストを登録
     engine.set_plugins(plugins)
 
-    # IkaLog GUI 起動時にキャプチャが enable 状態かどうか
-    gui.set_enable(True)
-
-    # Loading config
-    engine.call_plugins('on_config_reset', debug=True)
-    gui.load_config(engine.context)
-    engine.call_plugins('on_config_load_from_context', debug=True)
-
-    gui.start_engine()
+    gui.run()
     application.MainLoop()
 
     IkaUtils.dprint(_('Bye!'))

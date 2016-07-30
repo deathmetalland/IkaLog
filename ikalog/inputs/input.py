@@ -87,10 +87,11 @@ class VideoInput(object):
         raise
 
     ##
-    # _next_frame_func()
+    # _read_frame_func()
     # @param self    the object
-    def _next_frame_func(self):
-        pass
+    # @return        the current frame of the input source.
+    def _read_frame_func(self):
+        raise
 
     ##
     # is_active()
@@ -171,22 +172,25 @@ class VideoInput(object):
     #
     # @return Image if capture succeeded. Otherwise None.
     def read_frame(self):
-        self.lock.acquire()
-        if not self.is_active():
+        try:
+            self.lock.acquire()
+            if not self.is_active():
+                return None
+
+            next_tick = None
+            img = self._read_frame_func()
+
+            # Skip some frames for performance.
+            try:
+                if self.cap_recorded_video:
+                    self._skip_frame_recorded()
+                else:
+                    next_tick = self._skip_frame_realtime()
+            except EOFError:
+                pass  # EOFError should be captured by the next cycle.
+
+        finally:
             self.lock.release()
-            return None
-
-        next_tick = None
-
-        if self.cap_recorded_video:
-            self._skip_frame_recorded()
-        else:
-            next_tick = self._skip_frame_realtime()
-
-        self._next_frame_func()
-
-        img = self._read_frame_func()
-        self.lock.release()
 
         if img is None:
             return None
@@ -245,6 +249,25 @@ class VideoInput(object):
     def get_current_timestamp(self):
         return self._get_current_timestamp_func()
 
+    def get_epoch_time(self):
+        return None
+
+    def set_pos_msec(self, pos_msec):
+        pass
+
+    # Returns the source file if the input is from a file. Otherwise None.
+    def get_source_file(self):
+        return None
+
+    # Puts file_path to be processed and returns True,
+    # otherwise returns False if the instance does not support this method.
+    def put_source_file(self, file_path):
+        return False
+
+    # Callback on EOFError. Returns True if a next data source is available.
+    def on_eof(self):
+        return False
+
     ##
     # set_frame_rate(self, fps=None, realtime=False)
     #
@@ -255,9 +278,6 @@ class VideoInput(object):
     # @param fps      frames per second to be read
     # @param realtime Realtime mode if True.
     def set_frame_rate(self, fps=None, realtime=False):
-        if not self.is_active():
-            return
-
         self.fps_requested = fps
         self.frame_skip_rt = realtime
 

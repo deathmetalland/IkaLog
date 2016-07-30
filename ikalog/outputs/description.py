@@ -29,28 +29,22 @@ import time
 
 from ikalog.utils import *
 
-def normalize_name(name):
-  normalization_dict = {
-    "ガロン52": ".52ガロン",
-    "ガロン96": ".96ガロン",
-    "ガロンデコ52": ".52ガロンデコ",
-    "ガロンデコ96": ".96ガロンデコ",
-  }
-  return normalization_dict.get(name, name)
-
 
 class Description(object):
     def __init__(self, output_filepath, verbose=True):
-        self._description = ""
-        self._last_death_time = ""
-        self._first_act = True
-        self._session_active = True
         self._output_filepath = output_filepath
         self._verbose = verbose
+        self.reset()
 
     def _print(self, message):
         if self._verbose:
             print(message)
+
+    def reset(self):
+        self._description = ''
+        self._last_death_time = ''
+        self._first_act = True
+        self._session_active = True
 
     def get_timestamp(self, context):
         time_sec = context['engine']['msec'] / 1000
@@ -69,6 +63,12 @@ class Description(object):
         self._description += (message + "\n")
         self._print(self._description)
 
+    def on_reset_capture(self, context):
+        self.reset()
+
+    def on_game_reset(self, context):
+        self.reset()
+
     def on_game_start(self, context):
         time = self.get_timestamp(context)
         self.append_description("ステージ入場", time)
@@ -81,7 +81,7 @@ class Description(object):
         time = self.get_timestamp(context)
         self.append_description("ゲーム終了", time)
 
-    def on_game_killed(self, context):
+    def on_game_killed(self, context, params):
         time = self.get_timestamp(context)
         self.append_description("く8彡 プレイヤーをたおした！", time)
 
@@ -96,7 +96,7 @@ class Description(object):
     def on_game_death_reason_identified(self, context):
         reason = IkaUtils.death_reason2text(
             context['game']['last_death_reason'])
-        self.append_description("くX彡 %s でやられた！" % normalize_name(reason),
+        self.append_description("くX彡 %s でやられた！" % reason,
                                 self._last_death_time)
         self._last_death_time = ""
 
@@ -165,8 +165,7 @@ class Description(object):
             return '', '', '', ''
 
         me = IkaUtils.getMyEntryFromContext(context)
-        weapon = normalize_name(
-            IkaUtils.death_reason2text(me.get('weapon', '')))
+        weapon = IkaUtils.death_reason2text(me.get('weapon', ''))
         kills = str(me.get('kills', ''))
         deaths = str(me.get('deaths', ''))
         score = me.get('score', '')
@@ -205,10 +204,7 @@ class Description(object):
                                      udemae['udemae_exp_after'])
             summary_list.append('%s→%s' % (udemae_before, udemae_after))
 
-        tsv_data = ['IKA', rule, map, result, kills, deaths,
-                    udemae_before, udemae_after, weapon]
-
-        return '\t'.join(tsv_data) + '\n' + ' '.join(summary_list)
+        return ' '.join(summary_list)
 
 
     def get_players(self, context):
@@ -236,8 +232,7 @@ class Description(object):
             result_list.append('%2dk%2dd' % (player['kills'], player['deaths']))
 
             # weapon
-            result_list.append(normalize_name(
-                IkaUtils.death_reason2text(player['weapon'])))
+            result_list.append(IkaUtils.death_reason2text(player['weapon']))
 
             players_list.append(' '.join(result_list))
 
@@ -279,11 +274,19 @@ class Description(object):
         summary = self.get_game_summary(context)
         self._print(summary)
         self._print(self._description)
-        with open(self._output_filepath, 'w') as datafile:
+        filepath = IkaUtils.get_file_name(self._output_filepath, context)
+        with open(filepath, 'w') as datafile:
           datafile.write(summary + '\n\n')
           datafile.write(self._description)
         self._session_active = False
 
     def on_game_session_abort(self, context):
-        if self._session_active:
-          self.on_game_session_end(context)
+        # If session is not active, on_game_session_end is already called.
+        # So do nothing.
+        if not self._session_active:
+            return
+
+        # Only when description is available or no file has been created yet,
+        # on_game_session_end is called.
+        if self._description or context['game']['index'] == 0:
+            self.on_game_session_end(context)

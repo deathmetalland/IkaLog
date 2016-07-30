@@ -18,7 +18,5 @@
 #  limitations under the License.
 #
 
-from .last_result import LastResultPanel
-from .options import OptionsPanel
+from .last_result import ResultsGUI
 from .preview import PreviewPanel
-from .timeline import TimelinePanel

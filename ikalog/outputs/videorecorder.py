@@ -61,13 +61,17 @@ class OBS(object):
             self.editDir.SetValue('')
 
     def on_config_reset(self, context=None):
+        self.config_reset()
+        self.refresh_ui()
+
+    def config_reset(self):
         self.enabled = False
         self.auto_rename_enabled = False
         self.control_obs = os.path.join(os.getcwd(), 'tools', 'ControlOBS.au3')
         self.dir = ''
 
     def on_config_load_from_context(self, context):
-        self.on_config_reset(context)
+        self.config_reset()
         try:
             conf = context['config']['obs']
         except:
@@ -101,7 +105,7 @@ class OBS(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY)
-        self.page = notebook.InsertPage(0, self.panel, _('Video Recorder'))
+        self.panel_name = _('Video Recorder')
         self.layout = wx.BoxSizer(wx.VERTICAL)
         self.panel.SetSizer(self.layout)
         self.checkEnable = wx.CheckBox(

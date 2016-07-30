@@ -3,7 +3,7 @@
 #
 #  IkaLog
 #  ======
-#  Copyright (C) 2015 Takeshi HASEGAWA
+#  Copyright (C) 2016 Takeshi HASEGAWA
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@
 from .game.start import GameStart
 from .game.go_sign import GameGoSign
 from .game.kill import GameKill
+from .game.kill_combo import GameKillCombo
 from .game.dead import GameDead
 from .game.finish import GameFinish
+from .game.low_ink import GameLowInk
 from .game.timer_icon import GameTimerIcon
 from .game.oob import GameOutOfBound
 from .game.special_weapon import GameSpecialWeapon
@@ -44,3 +46,4 @@ from .plaza_user_stat import PlazaUserStat
 
 from .downie import Downie
 from .blank import Blank
+from .misc.amarec_16x10 import Amarec16x10Warning

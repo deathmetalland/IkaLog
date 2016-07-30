@@ -35,6 +35,9 @@ msgstr "ビデオ入力"
 msgid "IkaLog preferences will be reset to default. Continue?"
 msgstr "設定がすべてリセットされます。よろしいですか？"
 
+msgid "The change will be updated when the apply button is pressed."
+msgstr "変更は、適用ボタンを押した時に更新されます。"
+
 #: IkaUI.py:56
 msgid "Confirm"
 msgstr "確認"
@@ -45,7 +48,7 @@ msgstr "開始"
 
 #: IkaUI.py:120
 msgid "Stop"
-msgstr "終了"
+msgstr "中止"
 
 #: IkaUI.py:140
 msgid "Enable"
@@ -125,3 +128,38 @@ msgstr "インタレース解除（普段は不要）"
 msgid "Select Input source:"
 msgstr "入力ソース："
 
+#: ikalog/ui/panel/options.py:70
+msgid "Apply"
+msgstr "適用"
+
+#: ikalog/ui/panel/options.py:78
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: ikalog/ui/panel/options.py:80
+msgid "Load default"
+msgstr "初期値を読込"
+
+#: ikalog/ui/panel/preview.py:49
+msgid "Browse"
+msgstr "参照"
+
+#: ikalog/ui/panel/preview.py:66
+msgid "Open"
+msgstr "開く"
+
+#: ikalog/ui/panel/preview.py:79
+msgid "Select a video file"
+msgstr "動画ファイルを選択"
+
+#: ikalog/ui/panel/preview.py:285
+msgid "The image seems to be 16x10. Perhaps the source is misconfigured."
+msgstr "入力画像のアスペクト比が 16x10 のようです。入力元（アマレコ？）の設定ミスの可能性があります。"
+
+#: ikalog/ui/gui.py:141
+msgid "Already added."
+msgstr "既に追加されています。"
+
+#: ikalog/ui/gui.py:250
+msgid "Misc."
+msgstr "その他"

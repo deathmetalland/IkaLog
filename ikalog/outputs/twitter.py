@@ -21,7 +21,6 @@
 # @package IkaOutput_Twitter
 
 import os
-from datetime import datetime
 import json
 
 import cv2
@@ -136,6 +135,10 @@ class Twitter(object):
         self._internal_update = False
 
     def on_config_reset(self, context=None):
+        self.config_reset()
+        self.refresh_ui()
+
+    def config_reset(self):
         self.enabled = False
         self.attach_image = False
         self.tweet_kd = False
@@ -150,7 +153,7 @@ class Twitter(object):
         self.footer = ''
 
     def on_config_load_from_context(self, context):
-        self.on_config_reset(context)
+        self.config_reset()
 
         try:
             conf = context['config']['twitter']
@@ -325,7 +328,7 @@ class Twitter(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY)
-        self.page = notebook.InsertPage(0, self.panel, 'Twitter')
+        self.panel_name = _('Twitter')
         self.layout = wx.BoxSizer(wx.VERTICAL)
         self.panel.SetSizer(self.layout)
         self.checkEnable = wx.CheckBox(
@@ -473,7 +476,7 @@ class Twitter(object):
             lose_text=_('lost'),
             unknown_text=_('played'))
 
-        t = datetime.now().strftime("%Y/%m/%d %H:%M")
+        t = IkaUtils.get_end_time(context).strftime("%Y/%m/%d %H:%M")
 
         s = _('Just %(result)s %(rule)s at %(stage)s') % \
             { 'stage': stage, 'rule': rule, 'result': result}

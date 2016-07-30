@@ -90,7 +90,7 @@ class WebSocketServer(object):
 
     # In-game basic events
 
-    def on_game_killed(self, context):
+    def on_game_killed(self, context, params):
         self._send_message({
             'event': 'on_game_killed'
         })
@@ -114,8 +114,8 @@ class WebSocketServer(object):
     def on_game_start(self, context):
         self._send_message({
             'event': 'on_game_start',
-            'stage': IkaUtils.map2id(context['game']['map'], 'unknown'),
-            'rule': IkaUtils.rule2id(context['game']['rule'], 'unknown'),
+            'stage': (context['game']['map'] or 'unknown'),
+            'rule': (context['game']['rule'] or 'unknown'),
         })
 
     def on_game_team_color(self, context):
@@ -355,12 +355,16 @@ class WebSocketServer(object):
         self._internal_update = False
 
     def on_config_reset(self, context=None):
+        self.config_reset()
+        self.refresh_ui()
+
+    def config_reset(self):
         self._enabled = False
         self._host = '127.0.0.1'
         self._port = '9090'
 
     def on_config_load_from_context(self, context):
-        self.on_config_reset(context)
+        self.config_reset()
 
         try:
             conf = context['config']['websocket_server']
@@ -392,7 +396,7 @@ class WebSocketServer(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY)
-        self.page = notebook.InsertPage(0, self.panel, _('WebSocket Server'))
+        self.panel_name = _('WebSocket Server')
         self.layout = wx.BoxSizer(wx.VERTICAL)
 
         self.check_enable = wx.CheckBox(

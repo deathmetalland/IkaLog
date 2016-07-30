@@ -64,6 +64,10 @@ class Fluentd(object):
             self.editUsername.SetValue('')
 
     def on_config_reset(self, context=None):
+        self.config_reset()
+        self.refresh_ui()
+
+    def config_reset(self):
         self.enabled = False
         self.host = ''
         self.port = ''
@@ -71,7 +75,7 @@ class Fluentd(object):
         self.username = ''
 
     def on_config_load_from_context(self, context):
-        self.on_config_reset(context)
+        self.config_reset()
         try:
             conf = context['config']['fluentd']
         except:
@@ -108,7 +112,7 @@ class Fluentd(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY, size=(640, 360))
-        self.page = notebook.InsertPage(0, self.panel, 'Fluentd')
+        self.panel_name = 'Fluentd'
         self.layout = wx.BoxSizer(wx.VERTICAL)
 
         self.checkEnable = wx.CheckBox(

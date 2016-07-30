@@ -96,6 +96,19 @@ class DebugVideoWriter(object):
     def on_config_apply(self, context):
         self.dir = self.edit_dir.GetValue()
 
+    def on_config_load_from_context(self, context):
+        # TODO: implement it.
+        self.config_reset()
+        pass
+
+    def config_reset(self):
+        # TODO: implement it.
+        pass
+
+    def on_config_reset(self, context):
+        self.config_reset()
+        self.refresh_ui()
+
     def refresh_ui(self):
         if self.dir is None:
             self.edit_dir.SetValue('')
@@ -110,7 +123,7 @@ class DebugVideoWriter(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY)
-        self.page = notebook.InsertPage(0, self.panel, _('Flight recorder'))
+        self.panel_name = _('Flight recorder')
         self.layout = wx.BoxSizer(wx.VERTICAL)
         self.panel.SetSizer(self.layout)
 

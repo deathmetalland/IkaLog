@@ -110,17 +110,11 @@ class APIServer(object):
 
     def recoginize_weapons(self, payload):
         weapons_list = []
+
         for img_bytes in payload:
             img = cv2.imdecode(np.fromstring(img_bytes, dtype='uint8'), 1)
             assert img is not None
-            result, distance = weapons.predict(img)
-
-            # FIXME: 現状返ってくる key が日本語表記なので id に変換
-            weapon_id = None
-            for k in ikalog.constants.weapons:
-                if ikalog.constants.weapons[k]['ja'] == result:
-                    weapon_id = k
-
+            weapon_id, distance = weapons.predict(img)
             weapons_list.append({'weapon': weapon_id})
 
         response_payload = {

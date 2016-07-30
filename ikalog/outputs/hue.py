@@ -57,12 +57,16 @@ class Hue(object):
             self.editHueUsername.SetValue('')
 
     def on_config_reset(self, context=None):
+        self.config_reset()
+        self.refresh_ui()
+
+    def config_reset(self):
         self.enabled = False
         self.hueHost = ''
         self.hueUsername = ''
 
     def on_config_load_from_context(self, context):
-        self.on_config_reset(context)
+        self.config_reset()
         try:
             conf = context['config']['hue']
         except:
@@ -92,7 +96,7 @@ class Hue(object):
 
     def on_option_tab_create(self, notebook):
         self.panel = wx.Panel(notebook, wx.ID_ANY, size=(640, 360))
-        self.page = notebook.InsertPage(0, self.panel, 'Hue')
+        self.panel_name = 'Hue'
         self.layout = wx.BoxSizer(wx.VERTICAL)
         self.panel.SetSizer(self.layout)
         self.checkEnable = wx.CheckBox(self.panel, wx.ID_ANY, u'Hue と連携')
