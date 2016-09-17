@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # ファイル名から時間の抽出
-epoch_time=`basename "$1" .mov | cut -c 10-22`
+epoch_time=`basename "$1" .m4v | cut -c 10-22`
 epoch_time="${epoch_time}00"
 echo $epoch_time
 
