@@ -205,6 +205,11 @@ def _init_outputs(opts):
         args = _replace_vars(output_args['Description'], vars)
         OutputPlugins.append(outputs.Description(**args))
 
+    # VideoRecorder (class "OBS", for Windows)
+    if 'VideoRecorder' in output_plugins:
+        args = _replace_vars(output_args['VideoRecorder'], vars)
+        OutputPlugins.append(outputs.OBS(**args))
+
     # 不具合調査向け。
     # イベントトリガをコンソールに出力。イベントトリガ時のスクリーンショット保存
     if (('DebugLog' in output_plugins) or opts.get('debug')):
@@ -225,6 +230,14 @@ def _init_outputs(opts):
     if 'Switcher' in output_plugins:
         args = _replace_vars(output_args['Switcher'], vars)
         OutputPlugins.append(outputs.Switcher(**args))
+
+    if 'Boyomi' in output_plugins:
+        args = _replace_vars(output_args['Boyomi'], vars)
+        OutputPlugins.append(outputs.Boyomi(**args))
+
+    if 'MikuMikuMouth' in output_plugins:
+        args = _replace_vars(output_args['MikuMikuMouth'], vars)
+        OutputPlugins.append(outputs.MikuMikuMouth(**args))
 
     return OutputPlugins
 
