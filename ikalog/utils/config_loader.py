@@ -97,6 +97,7 @@ def _init_source(opts):
         source = PynqCapture(
             debug=input_args.get('debug', False),
             enable_output=input_args.get('enable_output', False),
+            mode=input_args.get('mode', 0),
         )
         source.select_source(index=0)
         return source
@@ -219,12 +220,6 @@ def _init_outputs(opts):
     if (('DebugLog' in output_plugins) or opts.get('debug')):
         args = _replace_vars(output_args['DebugLog'], vars)
         OutputPlugins.append(outputs.DebugLog(**args))
-
-    # 不具合調査向け。
-    # ウインドウに対して v キー押下でデバッグ録画を開始する
-    if 'DebugVideoWriter' in output_plugins:
-        args = _replace_vars(output_args['DebugVideoWriter'], vars)
-        OutputPlugins.append(outputs.DebugVideoWriter(**args))
 
     # PreviewDetected: 認識した画像をプレビュー上でマークする
     if 'PreviewDetected' in output_plugins:
