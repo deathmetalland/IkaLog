@@ -16,4 +16,4 @@ python upload_video.py \
 > upload_video.log
 
 VIDEOID=`tail -n 1 upload_video.log`
-/usr/local/bin/python3 IkaLog.py --input_file "$1" --video_id $VIDEOID
+/usr/local/bin/python3 IkaLog.py --input_file "$1" --video_id "$VIDEOID"
