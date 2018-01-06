@@ -17,3 +17,15 @@ python upload_video.py \
 
 VIDEOID=`tail -n 1 upload_video.log`
 /usr/local/bin/python3 IkaLog.py --input_file "$1" --video_id=$VIDEOID
+
+# Update description on Youtube
+cat description.txt > description_license.txt
+cat >> description_license.txt << EOF
+
+私は、Nintendo Creators Programのライセンスによって、この動画で任天堂コンテンツを使用しています。この動画は、任天堂による援助や支援がなされているものではありませんが、この動画から得られる広告収益は任天堂と分け合われます。
+EOF
+DESCRIPTION=`cat description_license.txt`
+
+python update_video.py \
+--video-id=$VIDEOID \
+--description="$DESCRIPTION"
